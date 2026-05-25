@@ -7,7 +7,7 @@
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'projetotg');
 define('DB_USER', 'root');
-define('DB_PASS', 'admin123');          // XAMPP padrão: senha vazia
+define('DB_PASS', '');          // XAMPP padrão: senha vazia
 
 function getDB() {
     static $pdo = null;
