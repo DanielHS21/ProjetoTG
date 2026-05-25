@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Gabarito:wght@400..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Gabarito:wght@400..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+body {
+    background-color: black;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    color: white;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2%;
+    height: 64px;
+    font-family: "Josefin Sans", sans-serif;
+    font-size: 1.1vw;
+    gap: 1.5em;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+#lista-filmes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2%;
+    margin: 2% auto;
+    width: 90%;
+}
+
+#filme-detalhes {
+    display: block;
+    padding: 2% 0;
+    border-radius: 10px;
+    width: 50%;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.header a {
+    color: white;
+    text-decoration: none;
+}
+
+.header a:hover {
+    color: red;
+}
+
+.titulo {
+    font-family: "Gabarito", sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    text-align: center;
+    color: red;
+    width: 100%;
+    margin-top: 3%;
+    font-size: 3vw;
+}
+
+.titulo::after {
+    content: '';
+    display: block;
+    width: 20%;
+    height: 1px;
+    margin: 0.5% auto 0;
+    background: linear-gradient(to right, transparent, red, transparent);
+}
+
+.home {
+    text-align: center;
+}
+
+.carousel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2%;
+    margin-top: 4%;
+}
+
+/* ── Filme card base ── */
+.filme-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ── Poster wrapper: posiciona o ícone sobre o poster ── */
+.poster-wrapper {
+    position: relative;
+    width: 15vw;
+    display: block;
+}
+
+.poster-wrapper img {
+    width: 100%;
+    border-radius: 15px;
+    display: block;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.poster-wrapper img:hover {
+    transform: scale(1.05);
+}
+
+/* Ícone add/del no canto superior direito */
+.btn-hover-lista {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    line-height: 0;
+    z-index: 10;
+}
+
+.poster-wrapper:hover .btn-hover-lista {
+    opacity: 1;
+}
+
+.icone-hover-lista {
+    height: 1.6vw;
+    width: auto;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.9));
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.icone-hover-lista:hover {
+    transform: scale(1.2);
+}
+
+/* ── Cards na lista de filmes ── */
+#lista-filmes .filme-card {
+    width: 13vw;
+}
+
+#lista-filmes .poster-wrapper {
+    width: 13vw;
+}
+
+.filme-card-titulo {
+    font-family: "Josefin Sans", sans-serif;
+    font-size: 0.9vw;
+    text-align: center;
+    margin-top: 0.5em;
+    color: white;
+}
+
+.btn-descubra {
+    display: inline-block;
+    margin-top: 2.5%;
+    color: red;
+    text-decoration: none;
+    font-size: 2vw;
+    border-bottom: 2px solid red;
+    font-family: "Josefin Sans", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    transition: 0.3s;
+}
+
+/* ── Logo ── */
+.logo-link {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 4vw;
+    width: auto;
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5em;
+    flex-shrink: 0;
+}
+
+/* ── Botão voltar ── */
+.btn-voltar {
+    display: inline-block;
+    margin: 1.5% 0 0 2%;
+}
+
+.icone-voltar {
+    height: 2.5vw;
+    width: auto;
+    opacity: 0.85;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.icone-voltar:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* ── Ícones add/del na página do filme ── */
+.btn-lista {
+    display: inline-block;
+    margin-top: 1em;
+}
+
+.icone-lista {
+    height: 2.5vw;
+    width: auto;
+    opacity: 0.85;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.icone-lista:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* ── Header form ── */
+.header form {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+/* ── Layout principal ── */
+.pagina-principal {
+    display: block;
+    width: 100%;
+}
+
+.conteudo-principal {
+    width: 100%;
+}
+
+/* ── Overlay sidebar ── */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 98;
+}
+
+.sidebar-overlay.visivel {
+    display: block;
+}
+
+/* ── Botão toggle sidebar ── */
+.btn-toggle-sidebar {
+    position: fixed;
+    top: 12%;
+    left: 0;
+    z-index: 100;
+    background-color: #111;
+    color: #ccc;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 0.7em 0.9em;
+    font-family: "Josefin Sans", sans-serif;
+    font-size: 0.85vw;
+    cursor: pointer;
+    transition: 0.2s;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+.btn-toggle-sidebar:hover,
+.btn-toggle-sidebar.ativo {
+    background-color: red;
+    color: white;
+}
+
+/* ── Sidebar retrátil ── */
+.sidebar-generos {
+    position: fixed;
+    top: 0;
+    left: -200px;
+    width: 180px;
+    height: 100vh;
+    padding: 80px 12px 20px;
+    background-color: #111;
+    z-index: 99;
+    overflow-y: auto;
+    transition: left 0.3s ease;
+    box-sizing: border-box;
+}
+
+.sidebar-generos.aberta {
+    left: 0;
+}
+
+.sidebar-titulo {
+    font-family: "Gabarito", sans-serif;
+    font-size: 16px;
+    color: red;
+    margin: 0 0 1em 0;
+    text-align: center;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.5em;
+}
+
+.genero-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.genero-item {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    font-family: "Josefin Sans", sans-serif;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.genero-item:hover {
+    color: white;
+    background-color: #222;
+}
+
+.genero-item.ativo {
+    color: white;
+    background-color: red;
+}
+/* ── Mensagem nenhum filme encontrado ── */
+.msg-nao-encontrado {
+    font-family: "Josefin Sans", sans-serif;
+    font-size: 1.1vw;
+    color: #aaa;
+    text-align: center;
+    margin: 4% auto;
+    padding: 2em;
+    border: 1px solid #222;
+    border-radius: 10px;
+    width: 40%;
+    line-height: 1.7;
+}
+.msg-nao-encontrado strong {
+    color: red;
+}
