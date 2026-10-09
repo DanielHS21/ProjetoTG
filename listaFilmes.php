@@ -198,12 +198,46 @@
         padding: 0;
     }
     .toast button:hover { text-decoration: underline; }
+
+    /* ── Celular / tablet ── */
+    @media (max-width: 900px) {
+        #lista-filmes, #lista-favoritos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px 12px;
+            width: auto;
+            padding: 0 16px;
+            margin: 16px 0;
+        }
+        #lista-filmes .filme-card, #lista-filmes .poster-wrapper,
+        #lista-favoritos .filme-card, .poster-wrapper { width: 100%; }
+        .poster-wrapper > img { border-radius: 10px; aspect-ratio: 2 / 3; object-fit: cover; }
+        .poster-wrapper > img:hover { transform: none; }
+        .filme-card-titulo { font-size: 13px; }
+        .btn-hover-lista, .btn-hover-fav { opacity: 1; }
+        .icone-hover-lista { height: 26px !important; }
+        .btn-hover-fav { font-size: 22px; }
+        .msg-vazia { grid-column: 1 / -1; font-size: 15px; padding: 0 8px; }
+
+        .abas { width: auto; margin: 0 16px 16px; }
+        .aba-btn { font-size: 14px; padding: 0.7em 1.4em; flex: 1; }
+        .lista-acoes { width: auto; padding: 0 16px; font-size: 14px; }
+        .btn-limpar-lista { font-size: 14px; padding: 0.55em 1em; }
+    }
+    @media (max-width: 360px) {
+        #lista-filmes, #lista-favoritos { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <a href='index.php' class='btn-voltar' title='Voltar'>
     <img src='Imagens/voltar.png' class='icone-voltar' alt='Voltar'>
 </a>
 
+<?php
+    // Busca todos os filmes (lista + favoritos) de uma vez, em paralelo e com cache.
+    // Antes era uma requisição por filme, uma depois da outra.
+    precarregarFilmes(array_merge($_SESSION['lista'] ?? [], $_SESSION['favoritos'] ?? []), $apiKey);
+?>
 <h1 class="titulo">Minhas Listas</h1>
 
 <div class="abas">

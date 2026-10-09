@@ -11,9 +11,9 @@ function listarFilmes($busca, $apiKey, $page = 1, $generoId = '', $ordem = '') {
     if (!empty($busca)) {
         // ── Passo 1: verifica se o termo buscado corresponde a uma pessoa conhecida ──
         $urlPessoa = "https://api.themoviedb.org/3/search/person?api_key=$apiKey&query=" . urlencode($busca) . "&language=pt-BR";
-        $rPessoa   = file_get_contents($urlPessoa);
+        $rPessoa   = tmdbGetCache($urlPessoa, RECO_TTL_LISTAS);
         if ($rPessoa !== FALSE) {
-            $dataPessoa = json_decode($rPessoa, true);
+            $dataPessoa = $rPessoa;
             if (!empty($dataPessoa['results'])) {
                 $primeira   = $dataPessoa['results'][0];
                 $nomePessoa = strtolower(trim($primeira['name'] ?? ''));
@@ -59,10 +59,8 @@ function listarFilmes($busca, $apiKey, $page = 1, $generoId = '', $ordem = '') {
         }
     }
 
-    $response = file_get_contents($url);
-    if ($response === FALSE) return "<p>Erro ao buscar filmes</p>";
-
-    $data = json_decode($response, true);
+    $data = tmdbGetCache($url, 3600);   // listas mudam pouco: cache de 1 hora
+    if (!$data) return "<p>Erro ao buscar filmes</p>";
     $html = "<div class='carousel'>";
 
     // Quando busca por título + gênero, filtra manualmente por gênero
@@ -108,15 +106,10 @@ function listarFilmes($busca, $apiKey, $page = 1, $generoId = '', $ordem = '') {
 
 function exibirFilme($id, $apiKey) {
     // Dados do filme
-    $url      = "https://api.themoviedb.org/3/movie/$id?api_key=$apiKey&language=pt-BR";
-    $response = file_get_contents($url);
-    if ($response === FALSE) return "<p>Erro ao buscar detalhes do filme</p>";
-    $filme = json_decode($response, true);
-
-    // Créditos (elenco e direção)
-    $urlCredits  = "https://api.themoviedb.org/3/movie/$id/credits?api_key=$apiKey&language=pt-BR";
-    $rCredits    = file_get_contents($urlCredits);
-    $credits     = $rCredits ? json_decode($rCredits, true) : [];
+    // Uma única requisição (com créditos), em cache e compartilhada com o recomendador
+    $filme = detalhesFilme($id, $apiKey);
+    if (!$filme) return "<p>Erro ao buscar detalhes do filme</p>";
+    $credits = $filme['credits'] ?? [];
 
     // Diretor(es)
     $diretores = [];
@@ -210,11 +203,9 @@ function exibirFilme($id, $apiKey) {
 
 
 function exibirFilmeCard($id, $apiKey) {
-    $url = "https://api.themoviedb.org/3/movie/$id?api_key=$apiKey&language=pt-BR";
-    $response = file_get_contents($url);
-    if ($response === FALSE) return "<p>Erro ao buscar filme</p>";
+    $filme = detalhesFilme($id, $apiKey);
+    if (!$filme) return "<p>Erro ao buscar filme</p>";
 
-    $filme   = json_decode($response, true);
     $poster  = "https://image.tmdb.org/t/p/w300" . $filme['poster_path'];
     $naLista = isset($_SESSION['lista']) && in_array($id, $_SESSION['lista']);
     $icone   = $naLista ? 'Imagens/del.png' : 'Imagens/add.png';
@@ -222,7 +213,7 @@ function exibirFilmeCard($id, $apiKey) {
 
     $html  = "<div class='filme-card' id='card-$id'>";
     $html .= "  <div class='poster-wrapper'>";
-    $html .= "      <img src='$poster' onclick=\"window.location.href='filme.php?id=$id'\" title='" . htmlspecialchars($filme['title']) . "'>";
+    $html .= "      <img src='$poster' loading='lazy' onclick=\"window.location.href='filme.php?id=$id'\" title='" . htmlspecialchars($filme['title']) . "'>";
     $html .= "      <a href='javascript:void(0)' class='btn-hover-lista' title='$title' onclick=\"alterarLista($id, this)\">";
     $html .= "          <img src='$icone' class='icone-hover-lista' id='icone-$id'>";
     $html .= "      </a>";
@@ -360,16 +351,14 @@ function isFavorito($filmeId) {
 }
 
 function exibirFilmeCardFavorito($id, $apiKey) {
-    $url = "https://api.themoviedb.org/3/movie/$id?api_key=$apiKey&language=pt-BR";
-    $response = file_get_contents($url);
-    if ($response === FALSE) return '';
+    $filme = detalhesFilme($id, $apiKey);
+    if (!$filme) return '';
 
-    $filme  = json_decode($response, true);
     $poster = "https://image.tmdb.org/t/p/w300" . $filme['poster_path'];
 
     $html  = "<div class='filme-card' id='fav-card-$id'>";
     $html .= "  <div class='poster-wrapper'>";
-    $html .= "      <img src='$poster' onclick=\"window.location.href='filme.php?id=$id'\" title='" . htmlspecialchars($filme['title']) . "'>";
+    $html .= "      <img src='$poster' loading='lazy' onclick=\"window.location.href='filme.php?id=$id'\" title='" . htmlspecialchars($filme['title']) . "'>";
     $html .= "      <a href='javascript:void(0)' class='btn-hover-fav' title='Remover dos favoritos' onclick=\"removerFavorito($id)\">★</a>";
     $html .= "  </div>";
     $html .= "  <p class='filme-card-titulo'>" . htmlspecialchars($filme['title']) . "</p>";

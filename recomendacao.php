@@ -138,12 +138,19 @@ if (empty($lista) && empty($favoritos)) {
 }
 
 @media (max-width: 900px) {
-    .reco-grid { grid-template-columns: repeat(3, 1fr); width: 92%; gap: 18px 12px; }
+    .reco-grid { grid-template-columns: repeat(3, 1fr); width: auto; padding: 0 16px; gap: 22px 14px; }
     .reco-titulo { font-size: 14px; }
     .reco-meta, .reco-motivo, .reco-perfil, .reco-dica { font-size: 12px; }
     .reco-match { font-size: 11px; }
     .reco-add { opacity: 1; }
     .reco-add img { height: 24px; }
+}
+@media (hover: none) {
+    .reco-poster > img:hover { transform: none; }   /* no toque o hover "gruda" */
+}
+@media (max-width: 600px) {
+    .reco-grid { grid-template-columns: repeat(2, 1fr); }
+    .reco-perfil { width: auto; padding: 0 16px; }
 }
 </style>
 

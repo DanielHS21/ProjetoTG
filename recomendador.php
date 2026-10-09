@@ -51,9 +51,56 @@ function tmdbUrl($path, array $params, $apiKey) {
 }
 
 function recoCacheDir() {
-    $dir = __DIR__ . '/cache/tmdb';
-    if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    return is_writable($dir) ? $dir : null;
+    static $dir = false;
+    if ($dir !== false) return $dir;
+    $d = __DIR__ . '/cache/tmdb';
+    if (!is_dir($d)) @mkdir($d, 0775, true);
+    $dir = is_writable($d) ? $d : null;
+    if ($dir) limparCacheTmdb($dir);
+    return $dir;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Limpeza automática do cache
+//  Roda no máximo a cada 6 horas (controlado por um arquivo-marcador),
+//  durante uma visita qualquer ao site — não precisa de agendador.
+//    1. apaga arquivos mais velhos que CACHE_IDADE_MAX
+//    2. se ainda passar de CACHE_TAMANHO_MAX, apaga os mais antigos
+// ─────────────────────────────────────────────────────────────
+const CACHE_IDADE_MAX     = 7 * 86400;           // 7 dias (= maior validade usada)
+const CACHE_TAMANHO_MAX   = 100 * 1024 * 1024;   // 100 MB
+const CACHE_INTERVALO     = 6 * 3600;            // verifica a cada 6 horas
+
+function limparCacheTmdb($dir, $forcar = false) {
+    $marcador = $dir . '/.ultima_limpeza';
+    clearstatcache();
+    if (!$forcar && is_file($marcador) && time() - filemtime($marcador) < CACHE_INTERVALO) return null;
+    @touch($marcador);   // marca antes, para duas visitas simultâneas não limparem juntas
+
+    $agora = time();
+    $restantes = [];
+    $total = 0;
+    $apagados = 0;
+    foreach (glob($dir . '/*.json') ?: [] as $arq) {
+        $mtime = @filemtime($arq);
+        if ($mtime === false) continue;
+        if ($agora - $mtime > CACHE_IDADE_MAX) {
+            if (@unlink($arq)) $apagados++;
+            continue;
+        }
+        $tam = @filesize($arq) ?: 0;
+        $restantes[] = [$mtime, $arq, $tam];
+        $total += $tam;
+    }
+
+    if ($total > CACHE_TAMANHO_MAX) {
+        sort($restantes);                       // mais antigos primeiro
+        foreach ($restantes as [$mtime, $arq, $tam]) {
+            if ($total <= CACHE_TAMANHO_MAX * 0.8) break;   // folga de 20%
+            if (@unlink($arq)) { $total -= $tam; $apagados++; }
+        }
+    }
+    return ['apagados' => $apagados, 'bytes' => $total];
 }
 
 /**
@@ -103,7 +150,7 @@ function tmdbGetMulti(array $urls, $ttl) {
     return $resultado;
 }
 
-function tmdbCurlMulti(array $urls, $simultaneas = 12) {
+function tmdbCurlMulti(array $urls, $simultaneas = 20) {
     $saida = [];
     $fila  = $urls;
     $mh    = curl_multi_init();
@@ -144,6 +191,38 @@ function tmdbCurlMulti(array $urls, $simultaneas = 12) {
 
     curl_multi_close($mh);
     return $saida;
+}
+
+/** Uma URL só, com o mesmo cache em disco. */
+function tmdbGetCache($url, $ttl) {
+    return tmdbGetMulti(['u' => $url], $ttl)['u'] ?? null;
+}
+
+/**
+ * Detalhes completos de filmes (com créditos), buscados em paralelo e em cache.
+ * Usa a MESMA URL do recomendador/perfil, então um cache serve para todos.
+ * Guarda também em memória durante a requisição: chamar precarregarFilmes()
+ * antes de um loop faz cada detalhesFilme() seguinte ser instantâneo.
+ */
+function precarregarFilmes(array $ids, $apiKey) {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+    $faltam = array_values(array_diff($ids, array_keys($GLOBALS['FILMES_MEMORIA'] ?? [])));
+    if ($faltam) {
+        $urls = [];
+        foreach ($faltam as $id) {
+            $urls[$id] = tmdbUrl("/movie/$id", ['append_to_response' => 'credits,keywords,recommendations,similar'], $apiKey);
+        }
+        foreach (tmdbGetMulti($urls, RECO_TTL_DETALHES) as $id => $dados) {
+            $GLOBALS['FILMES_MEMORIA'][$id] = $dados;
+        }
+    }
+    $saida = [];
+    foreach ($ids as $id) $saida[$id] = $GLOBALS['FILMES_MEMORIA'][$id] ?? null;
+    return $saida;
+}
+
+function detalhesFilme($id, $apiKey) {
+    return precarregarFilmes([$id], $apiKey)[(int)$id] ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────

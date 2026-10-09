@@ -139,6 +139,29 @@ $filmeDetalhes = exibirFilme($filmeId, $apiKey);
 }
 .btn-favorito:hover  { color: gold; transform: scale(1.15); }
 .btn-favorito.ativo  { color: gold; }
+
+/* ── Celular / tablet: poster em cima, informações embaixo ── */
+@media (max-width: 900px) {
+    .filme-voltar { margin: 12px 0 0 14px; }
+    .filme-layout {
+        flex-direction: column;
+        align-items: center;
+        width: auto;
+        padding: 0 18px 24px;
+        margin-top: 8px;
+        gap: 22px;
+    }
+    .filme-poster-col { width: min(58%, 260px); }
+    .filme-info-col { width: 100%; }
+    .filme-titulo { font-size: 26px; text-align: center; }
+    .filme-meta { font-size: 14px; justify-content: center; margin-bottom: 1.4em; }
+    .filme-info-linha { flex-direction: column; gap: 0.3em; margin-bottom: 1.1em; }
+    .filme-info-label { font-size: 11px; width: auto; }
+    .filme-info-valor { font-size: 15px; }
+    .filme-sinopse-texto { font-size: 15px; line-height: 1.6; }
+    .filme-acoes { justify-content: center; gap: 1.6em; }
+    .btn-favorito { font-size: 36px; }
+}
 </style>
 
 <a href='<?php echo htmlspecialchars($urlVoltar, ENT_QUOTES); ?>' class='btn-voltar filme-voltar' title='Voltar'>

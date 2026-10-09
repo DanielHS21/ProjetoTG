@@ -218,6 +218,58 @@ function tituloAtual($busca, $genero, $ordem, $generos, $ordens) {
         cursor: pointer;
     }
     .icone-hover-lista:hover { transform: scale(1.2); }
+
+    /* ── Celular / tablet ── */
+    @media (max-width: 900px) {
+        /* Todas as "fileiras" de 5 filmes viram uma grade única de 3 colunas */
+        .grade-filmes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px 12px;
+            padding: 0 16px;
+            margin-top: 20px;
+        }
+        .grade-filmes .carousel { display: contents; }
+        .grade-filmes .msg-nao-encontrado { grid-column: 1 / -1; }
+        .poster-wrapper { width: 100%; }
+        .poster-wrapper img { border-radius: 10px; aspect-ratio: 2 / 3; object-fit: cover; }
+        .poster-wrapper img:hover { transform: none; }
+
+        /* Sem "hover" no toque: botão sempre visível */
+        .btn-hover-lista { opacity: 1; top: 6px; right: 6px; }
+        .icone-hover-lista { height: 26px; }
+
+        .filtros-ativos { width: auto; padding: 0 16px; }
+        .tag-filtro { font-size: 13px; padding: 0.35em 0.85em; }
+
+        /* Botão de filtros flutuante no canto inferior */
+        .btn-toggle-sidebar {
+            top: auto !important;
+            bottom: 18px;
+            left: 16px;
+            writing-mode: horizontal-tb;
+            border-radius: 24px;
+            padding: 12px 18px;
+            font-size: 15px;
+            z-index: 610;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid #2a2a2a;
+        }
+        .sidebar-overlay { z-index: 590; }
+        .sidebar-generos {
+            z-index: 600;
+            width: 260px;
+            left: -280px;
+            padding-top: 24px;
+            padding-bottom: 90px;
+        }
+        .sidebar-titulo { font-size: 18px; }
+        .sidebar-secao-label { font-size: 11px; }
+        .genero-item { font-size: 15px; padding: 10px 12px; }
+    }
+    @media (max-width: 360px) {
+        .grade-filmes { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -298,9 +350,11 @@ function tituloAtual($busca, $genero, $ordem, $generos, $ordens) {
     </div>
     <?php endif; ?>
 
+    <div class="grade-filmes">
     <?php for ($i = 1; $i <= $page; $i++): ?>
         <?php echo listarFilmes($busca, $apiKey, $i, $genero, $ordem); ?>
     <?php endfor; ?>
+    </div>
 
     <?php
         $proximaPagina = $page + 1;

@@ -129,6 +129,20 @@
     border-top: 1px solid #1f1f1f;
     margin: 1.5em 0;
 }
+
+/* ── Celular / tablet ── */
+@media (max-width: 900px) {
+    .auth-container { padding: 24px 16px; box-sizing: border-box; }
+    .auth-box { width: 100%; max-width: 420px; min-width: 0; padding: 1.8em 1.4em; }
+    .auth-titulo { font-size: 26px; }
+    .auth-subtitulo, .auth-link, .auth-mensagem { font-size: 14px; }
+    .auth-box label { font-size: 12px; }
+    .auth-box input[type="text"],
+    .auth-box input[type="email"],
+    .auth-box input[type="password"] { font-size: 16px; padding: 0.8em 0.9em; }
+    .auth-btn { font-size: 15px; padding: 0.9em; }
+    .auth-dica { font-size: 12px; }
+}
 </style>
 
 <div class="auth-container">
