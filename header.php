@@ -26,7 +26,17 @@ $busca = $_GET['busca'] ?? '';
 
     <?php if (isset($_SESSION['usuario_id'])): ?>
         <a href="perfil.php" class="header-usuario">
-            <img src="Imagens/user.png" alt="Perfil" class="icone-usuario">
+            <?php
+                // Sessões abertas antes desta versão ainda não têm a foto carregada
+                if (!array_key_exists('usuario_foto', $_SESSION)) {
+                    try {
+                        require_once 'db.php';
+                        $uTmp = buscarUsuario(getDB(), $_SESSION['usuario_id']);
+                        $_SESSION['usuario_foto'] = $uTmp['foto'] ?? null;
+                    } catch (Throwable $e) { $_SESSION['usuario_foto'] = null; }
+                }
+                echo avatarHtml($_SESSION['usuario_nome'] ?? '', $_SESSION['usuario_foto'], 'avatar-header');
+            ?>
             <?php echo htmlspecialchars($_SESSION['usuario_nome']); ?>
         </a>
         <a href="auth.php?acao=logout" class="header-auth-link">Sair</a>
@@ -79,6 +89,9 @@ $busca = $_GET['busca'] ?? '';
 }
 
     .header-usuario {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
         font-family: "Josefin Sans", sans-serif;
         font-size: 0.85vw;
         color: #aaa;

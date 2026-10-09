@@ -267,6 +267,59 @@ function removeLista($filmeId) {
 }
 
 
+/**
+ * Remove todos os filmes da lista (sessão + banco) e guarda um backup
+ * temporário para permitir "Desfazer".
+ * Retorna quantos filmes foram removidos.
+ */
+function limparLista() {
+    $lista  = array_map('intval', $_SESSION['lista'] ?? []);
+    $backup = [];
+
+    if (!empty($_SESSION['usuario_id'])) {
+        require_once 'db.php';
+        $pdo  = getDB();
+        $stmt = $pdo->prepare('SELECT filme_id, adicionado_em FROM lista_filmes WHERE usuario_id = ? ORDER BY adicionado_em ASC, id ASC');
+        $stmt->execute([$_SESSION['usuario_id']]);
+        foreach ($stmt->fetchAll() as $row) {
+            $backup[] = ['id' => (int)$row['filme_id'], 'em' => $row['adicionado_em']];
+        }
+        $pdo->prepare('DELETE FROM lista_filmes WHERE usuario_id = ?')->execute([$_SESSION['usuario_id']]);
+    } else {
+        foreach ($lista as $id) $backup[] = ['id' => $id, 'em' => null];
+    }
+
+    $_SESSION['lista_backup'] = ['quando' => time(), 'itens' => $backup];
+    $_SESSION['lista'] = [];
+    return count($backup);
+}
+
+/**
+ * Restaura a lista apagada por limparLista() (até 10 minutos depois),
+ * preservando a ordem original — importante para as recomendações.
+ */
+function restaurarLista() {
+    $backup = $_SESSION['lista_backup'] ?? null;
+    if (!$backup || time() - $backup['quando'] > 600) return false;
+
+    $ids = array_column($backup['itens'], 'id');
+
+    if (!empty($_SESSION['usuario_id'])) {
+        require_once 'db.php';
+        $pdo  = getDB();
+        $stmt = $pdo->prepare('INSERT IGNORE INTO lista_filmes (usuario_id, filme_id, adicionado_em) VALUES (?, ?, COALESCE(?, NOW()))');
+        foreach ($backup['itens'] as $item) {
+            $stmt->execute([$_SESSION['usuario_id'], $item['id'], $item['em']]);
+        }
+    }
+
+    // Filmes antigos voltam na ordem original; os adicionados depois da limpeza ficam no fim
+    $atuais = array_map('intval', $_SESSION['lista'] ?? []);
+    $_SESSION['lista'] = array_values(array_unique(array_merge($ids, $atuais)));
+    unset($_SESSION['lista_backup']);
+    return true;
+}
+
 function addFavorito($filmeId) {
     $filmeId = (int)$filmeId;
     if (empty($_SESSION['usuario_id'])) return; // só para logados
@@ -347,164 +400,6 @@ function analiseLista($apiKey) {
     return $generos;
 }
 
-function recomendarFilme($lista, $apiKey) {
-
-    $lista = array_slice($lista, -5);
-    $contagemGeneros   = [];
-    $contagemAtores    = [];
-    $contagemDiretores = [];
-    $pontuacao         = [];
-    $todosRecomendados = [];
-
-    // ── Passo 1: coletar gêneros, atores e diretores da lista ──
-    foreach ($lista as $index => $filmeId) {
-        $peso = $index + 1;
-
-        // Cache do filme
-        if (!isset($_SESSION['filme_cache'][$filmeId])) {
-            $url = "https://api.themoviedb.org/3/movie/$filmeId?api_key=$apiKey&language=pt-BR";
-            $r   = file_get_contents($url);
-            if ($r === FALSE) continue;
-            $_SESSION['filme_cache'][$filmeId] = json_decode($r, true);
-        }
-        $data = $_SESSION['filme_cache'][$filmeId];
-
-        foreach ($data['genres'] as $g) {
-            $contagemGeneros[$g['id']] = ($contagemGeneros[$g['id']] ?? 0) + $peso;
-        }
-
-        // Cache dos créditos
-        if (!isset($_SESSION['credits_cache'][$filmeId])) {
-            $url = "https://api.themoviedb.org/3/movie/$filmeId/credits?api_key=$apiKey";
-            $r   = file_get_contents($url);
-            if ($r !== FALSE) {
-                $_SESSION['credits_cache'][$filmeId] = json_decode($r, true);
-            }
-        }
-
-        if (isset($_SESSION['credits_cache'][$filmeId])) {
-            $credits = $_SESSION['credits_cache'][$filmeId];
-
-            // Top 3 atores do elenco principal
-            foreach (array_slice($credits['cast'] ?? [], 0, 3) as $ator) {
-                $contagemAtores[$ator['id']] = ($contagemAtores[$ator['id']] ?? 0) + $peso;
-            }
-
-            // Diretor
-            foreach ($credits['crew'] ?? [] as $membro) {
-                if ($membro['job'] === 'Director') {
-                    $contagemDiretores[$membro['id']] = ($contagemDiretores[$membro['id']] ?? 0) + $peso;
-                }
-            }
-        }
-    }
-
-    // ── Passo 2: buscar candidatos via /discover filtrando por ator ou diretor recorrente ──
-    // Gêneros predominantes para usar como filtro adicional
-    arsort($contagemGeneros);
-    $generosIds = implode(',', array_slice(array_keys($contagemGeneros), 0, 3));
-
-    // Atores que aparecem em 2+ filmes
-    $atoresFrequentes = array_keys(array_filter($contagemAtores, function($v) {
-    return $v >= 2;
-}));
-
-    // Diretores que aparecem em 2+ filmes
-    $diretoresFrequentes = array_keys(array_filter($contagemDiretores, function($v) {
-    return $v >= 2;
-}));
-
-    $consultas = [];
-
-    foreach ($diretoresFrequentes as $dirId) {
-        $consultas[] = [
-            'url'   => "https://api.themoviedb.org/3/discover/movie?api_key=$apiKey&language=pt-BR&sort_by=vote_average.desc&vote_count.gte=500&with_crew=$dirId",
-            'bonus' => 15, // diretor recorrente tem peso alto
-        ];
-    }
-
-    foreach ($atoresFrequentes as $atorId) {
-        $consultas[] = [
-            'url'   => "https://api.themoviedb.org/3/discover/movie?api_key=$apiKey&language=pt-BR&sort_by=vote_average.desc&vote_count.gte=500&with_cast=$atorId",
-            'bonus' => 10,
-        ];
-    }
-
-    // Fallback: busca por gêneros + filmes similares se não há atores/diretores frequentes
-    if (empty($consultas)) {
-        foreach ($lista as $filmeId) {
-            $url = "https://api.themoviedb.org/3/movie/$filmeId/similar?api_key=$apiKey&language=pt-BR";
-            $r   = file_get_contents($url);
-            if ($r === FALSE) continue;
-            $data = json_decode($r, true);
-            foreach ($data['results'] as $filme) {
-                if (in_array($filme['id'], $lista)) continue;
-                if (empty($filme['poster_path'])) continue;
-                $pontos = ($filme['vote_average'] ?? 0);
-                foreach ($filme['genre_ids'] as $gId) {
-                    $pontos += $contagemGeneros[$gId] ?? 0;
-                }
-                if (!isset($pontuacao[$filme['id']]) || $pontos > $pontuacao[$filme['id']]) {
-                    $pontuacao[$filme['id']] = $pontos;
-                    $todosRecomendados[$filme['id']] = $filme;
-                }
-            }
-        }
-    }
-
-    // ── Passo 3: pontuar candidatos das consultas ──
-    foreach ($consultas as $consulta) {
-        $r = file_get_contents($consulta['url']);
-        if ($r === FALSE) continue;
-        $data = json_decode($r, true);
-
-        foreach ($data['results'] ?? [] as $filme) {
-            if (in_array($filme['id'], $lista)) continue;
-            if (empty($filme['poster_path'])) continue;
-
-            // Ignorar documentários (genre_id 99)
-            if (in_array(99, $filme['genre_ids'] ?? [])) continue;
-
-            $pontos = $consulta['bonus'];
-
-            // Bônus por gêneros em comum com a lista
-            foreach ($filme['genre_ids'] as $gId) {
-                $pontos += $contagemGeneros[$gId] ?? 0;
-            }
-
-            // Bônus por nota (filmes bem avaliados sobem)
-            $pontos += $filme['vote_average'] ?? 0;
-
-            // Bônus/penalidade por ano
-            $ano = isset($filme['release_date']) ? (int)substr($filme['release_date'], 0, 4) : 0;
-            if ($ano < 2000) $pontos -= 3;
-            if ($ano >= 2015) $pontos += 2;
-
-            if (!isset($pontuacao[$filme['id']]) || $pontos > $pontuacao[$filme['id']]) {
-                $pontuacao[$filme['id']] = $pontos;
-                $todosRecomendados[$filme['id']] = $filme;
-            }
-        }
-    }
-
-    if (empty($todosRecomendados)) {
-        return "<p>Nenhuma recomendação encontrada.</p>";
-    }
-
-    arsort($pontuacao);
-    $topIds = array_slice(array_keys($pontuacao), 0, 3);
-
-    $html  = "<h2>Filmes Recomendados</h2>";
-    $html .= "<div class='carousel'>";
-    foreach ($topIds as $id) {
-        if (!isset($todosRecomendados[$id])) continue;
-        $filme  = $todosRecomendados[$id];
-        $poster = "https://image.tmdb.org/t/p/w300" . $filme['poster_path'];
-        $html  .= "<div class='filme-card'>";
-        $html  .= "<img src='$poster' onclick=\"window.location.href='filme.php?id=$id'\">";
-        $html  .= "</div>";
-    }
-    $html .= "</div>";
-
-    return $html;
-}
+// O motor de recomendação fica em recomendador.php
+require_once __DIR__ . '/recomendador.php';
+require_once __DIR__ . '/perfilFuncoes.php';

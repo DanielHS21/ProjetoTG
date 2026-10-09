@@ -4,6 +4,20 @@ include 'header.php';
 $filmeId = (int)($_GET['id'] ?? 0);
 $apiKey  = "5ced0e51cd24880895288b3d6c5571c9";
 
+// Guarda de onde o usuário veio (recomendações, lista, busca...) para o botão voltar.
+// Recarregar a própria página (adicionar à lista/favoritos) não sobrescreve a origem.
+$ref = $_SERVER['HTTP_REFERER'] ?? '';
+$refHost = parse_url($ref, PHP_URL_HOST);
+$refPath = basename(parse_url($ref, PHP_URL_PATH) ?? '');
+$meuHost = parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST);   // ignora a porta
+if ($ref && $refHost === $meuHost && $refPath !== 'filme.php') {
+    parse_str(parse_url($ref, PHP_URL_QUERY) ?? '', $params);
+    unset($params['atualizar']);   // voltar não deve forçar novo cálculo das recomendações
+    $q = http_build_query($params);
+    $_SESSION['voltar_filme'][$filmeId] = $refPath . ($q ? '?' . $q : '');
+}
+$urlVoltar = $_SESSION['voltar_filme'][$filmeId] ?? 'index.php';
+
 if (isset($_GET['addLista']))       addLista($filmeId);
 if (isset($_GET['removeLista']))    removeLista($filmeId);
 if (isset($_GET['addFavorito']))    addFavorito($filmeId);
@@ -127,7 +141,7 @@ $filmeDetalhes = exibirFilme($filmeId, $apiKey);
 .btn-favorito.ativo  { color: gold; }
 </style>
 
-<a href='index.php' class='btn-voltar filme-voltar' title='Voltar'>
+<a href='<?php echo htmlspecialchars($urlVoltar, ENT_QUOTES); ?>' class='btn-voltar filme-voltar' title='Voltar'>
     <img src='Imagens/voltar.png' class='icone-voltar' alt='Voltar'>
 </a>
 

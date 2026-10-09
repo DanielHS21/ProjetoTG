@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nome          VARCHAR(100)    NOT NULL,
     email         VARCHAR(150)    NOT NULL,
     senha_hash    VARCHAR(255)    NOT NULL,          -- armazenada com password_hash()
+    foto          VARCHAR(255)    NULL,              -- caminho da foto de perfil (opcional)
+    bio           VARCHAR(160)    NULL,              -- bio curta exibida no perfil
     created_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
@@ -57,3 +59,10 @@ CREATE TABLE IF NOT EXISTS favoritos (
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+--  Atualização para bancos já existentes (foto e bio do perfil)
+--  O site também adiciona essas colunas sozinho, se tiver permissão.
+-- ------------------------------------------------------------
+-- ALTER TABLE usuarios ADD COLUMN foto VARCHAR(255) NULL AFTER senha_hash;
+-- ALTER TABLE usuarios ADD COLUMN bio  VARCHAR(160) NULL AFTER foto;

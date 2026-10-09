@@ -67,7 +67,8 @@ if ($acao === 'login') {
     }
 
     $pdo  = getDB();
-    $stmt = $pdo->prepare('SELECT id, nome, senha_hash FROM usuarios WHERE email = ?');
+    garantirColunasPerfil($pdo);
+    $stmt = $pdo->prepare('SELECT id, nome, senha_hash, foto FROM usuarios WHERE email = ?');
     $stmt->execute([$email]);
     $usuario = $stmt->fetch();
 
@@ -78,6 +79,7 @@ if ($acao === 'login') {
     // Login bem-sucedido — salva na sessão
     $_SESSION['usuario_id']   = $usuario['id'];
     $_SESSION['usuario_nome'] = $usuario['nome'];
+    $_SESSION['usuario_foto'] = $usuario['foto'];
 
     // ── Migra a lista temporária da sessão para o banco ──
     if (!empty($_SESSION['lista'])) {
