@@ -351,6 +351,10 @@ a.pf-stat:hover { border-color: #400; transform: translateY(-2px); }
     .pf-avatar-wrap .avatar { width: 88px; height: 88px; font-size: 32px; }
     .pf-avatar-editar { opacity: 1; }
     .pf-acoes { flex-wrap: wrap; }
+<<<<<<< HEAD
+=======
+    .pf-acoes a[href*='logout'] { display: none; }   /* "Sair" já está no menu ☰ */
+>>>>>>> 1bb3be4e30890b7f73277d8cb55f3b85e8ed23db
     .pf-nome { font-size: 28px; }
     .pf-stats, .pf-secao { width: 92%; }
     .pf-stats { grid-template-columns: repeat(2, 1fr); }
