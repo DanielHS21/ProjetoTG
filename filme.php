@@ -1,4 +1,4 @@
-<?php
+    <?php
 include 'header.php';
 
 $filmeId = (int)($_GET['id'] ?? 0);
